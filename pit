@@ -1,0 +1,74 @@
+#!/bin/bash
+export config="$HOME/.pit"
+touch "$config"
+
+function print_profiles {
+  echo "Profiles:"
+  i=0
+  while IFS="," read profile email name
+  do
+    echo "$i) $profile"
+    ((++i))
+  done < "$config"
+}
+
+function configure_git {
+  profile="$1"
+  email="$2"
+  name="$3"
+  keyfile="$4"
+
+  git config --global user.name "$name"
+  git config --global user.email "$email"
+  if [ "$keyfile" = "" ]
+  then
+    keyfile="~/.ssh/$(git config user.email)"
+  fi
+  git config --global core.sshCommand "ssh -i \"$keyfile\" -o IdentitiesOnly=yes"
+}
+
+function select_profile {
+  selected_profile="$1"
+  i=0
+  activated=0
+  while IFS="," read profile email name keyfile
+  do
+    if [ "$selected_profile" = "$profile" ] || [ "$selected_profile" = "$i" ]
+    then
+      configure_git "$profile" "$email" "$name" "$keyfile"
+      echo "Activated profile $profile"
+      return 0
+    fi
+    ((++i))
+  done < "$config"
+  return 1
+}
+
+while getopts ":h" option; do
+  case "${option}" in
+    h)
+      echo "Usage: pit [PROFILE] [OPTION]
+Switch between git profiles easily.
+
+  -h display this help text and exit
+
+When executed without specifying a profile pit will display all profiles.
+A profile can be specified either by its numeric id or its name.
+
+The file ~/.pit contains your pit profiles in CSV format
+This CSV file is in the format profile,email,name[,keyfile]
+If a keyfile is not specified pit will automatically search for a filename
+matching the profile email in ~/.ssh"
+      exit
+      ;;
+  esac
+done
+
+select_profile "$1"
+
+if [ "$?" -ne 0 ]
+then
+  echo "No selection made, run pit -h for help"
+  echo
+  print_profiles
+fi
