@@ -4,7 +4,7 @@ touch "$config"
 
 function print_profiles {
   echo "Profiles:"
-  i=0
+  local i=0
   while IFS="," read profile email name
   do
     echo "$i) $profile"
@@ -13,24 +13,26 @@ function print_profiles {
 }
 
 function configure_git {
-  profile="$1"
-  email="$2"
-  name="$3"
-  keyfile="$4"
+  local profile="$1"
+  local email="$2"
+  local name="$3"
+  local keyfile="$4"
 
-  git config --global user.name "$name"
-  git config --global user.email "$email"
-  if [ "$keyfile" = "" ]
+  if [ "$keyfile"="" ]
   then
     keyfile="~/.ssh/$(git config user.email)"
   fi
+
+  git config --global user.name "$name"
+  git config --global user.email "$email"
   git config --global core.sshCommand "ssh -i \"$keyfile\" -o IdentitiesOnly=yes"
 }
 
 function select_profile {
-  selected_profile="$1"
-  i=0
-  activated=0
+  local selected_profile="$1"
+  local i=0
+  local activated=0
+
   while IFS="," read profile email name keyfile
   do
     if [ "$selected_profile" = "$profile" ] || [ "$selected_profile" = "$i" ]
