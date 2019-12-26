@@ -20,7 +20,7 @@ function configure_git {
 
   if [ "$keyfile"="" ]
   then
-    keyfile="~/.ssh/$(git config user.email)"
+    keyfile="~/.ssh/$email"
   fi
 
   git config --global user.name "$name"
