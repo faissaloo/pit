@@ -2,12 +2,32 @@
 export config="$HOME/.pit"
 touch "$config"
 
+function print_current_profile {
+  current_email="$(git config user.email)"
+  while IFS="," read profile email name
+  do
+    if [ "$email" == "$current_email" ]
+    then
+      echo "$profile"
+      return
+    fi
+  done < "$config"
+  echo "Profile has not been set"
+  return 255
+}
+
 function print_profiles {
+  current_email="$(git config user.email)"
   echo "Profiles:"
   local i=0
   while IFS="," read profile email name
   do
-    echo "$i) $profile"
+    if [ "$email" == "$current_email" ]
+    then
+      echo "$i) [$profile]"
+    else
+      echo "$i) $profile"
+    fi
     ((++i))
   done < "$config"
 }
@@ -46,12 +66,18 @@ function select_profile {
   return 1
 }
 
-while getopts ":h" option; do
+while getopts ":hc" option; do
   case "${option}" in
+    c)
+      print_current_profile
+      exit
+      ;;
     h)
       echo "Usage: pit [PROFILE] [OPTION]
 Switch between git profiles easily.
 
+  -c display the current profile name and exit
+  
   -h display this help text and exit
 
 When executed without specifying a profile pit will display all profiles.
@@ -70,7 +96,5 @@ select_profile "$1"
 
 if [ "$?" -ne 0 ]
 then
-  echo "No selection made, run pit -h for help"
-  echo
   print_profiles
 fi
